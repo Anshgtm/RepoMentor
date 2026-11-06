@@ -1,13 +1,100 @@
 import { Link } from 'react-router-dom'
-import { Check, Moon, Sun } from 'lucide-react'
+import { Check, Moon, Sun, Monitor, Sliders } from 'lucide-react'
 import { Shell } from '../components/layout/Shell'
 import { useAppState } from '../state/AppState'
 
 export function SettingsPage() {
   const { state, dispatch } = useAppState()
-  return <Shell><div className="mx-auto max-w-3xl px-6 py-16"><Link to="/" className="eyebrow">← Back to workspaces</Link><div className="mt-10"><p className="eyebrow">Workspace preferences</p><h1 className="mt-3 text-5xl font-semibold tracking-[-.055em]">Appearance.</h1><p className="mt-4 max-w-xl text-lg leading-8 text-ink/55">Tune the reading environment for long architecture sessions and careful code review.</p></div><section className="panel mt-12 p-7 md:p-9"><div className="flex items-start justify-between gap-5"><div><p className="eyebrow">Theme</p><h2 className="mt-2 text-2xl font-medium">Choose your atmosphere</h2><p className="mt-2 text-sm leading-6 text-ink/55">Dark mode is the default. Your preference is saved on this device.</p></div><div className="hidden rounded-full border border-ink/10 p-3 text-gold sm:block"><Moon size={19}/></div></div><div className="mt-8 grid gap-3 sm:grid-cols-2"><ThemeOption active={state.theme === 'dark'} icon={<Moon size={18}/>} label="Midnight" description="Low glare, deep focus" onClick={() => dispatch({ type: 'set-theme', theme: 'dark' })}/><ThemeOption active={state.theme === 'light'} icon={<Sun size={18}/>} label="Daylight" description="Warm paper, clear contrast" onClick={() => dispatch({ type: 'set-theme', theme: 'light' })}/></div></section></div></Shell>
+
+  return (
+    <Shell>
+      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <Link to="/" className="text-link mb-6 inline-flex">
+          ← Back to repository index
+        </Link>
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">
+            Interface Preferences
+          </h1>
+          <p className="mt-2 text-sm text-muted max-w-xl leading-relaxed">
+            Configure reading themes and typography contrast for extended code analysis and architectural reviews.
+          </p>
+        </div>
+
+        <section className="panel border border-line-strong p-6 sm:p-8 bg-surface space-y-6">
+          <div className="flex items-start justify-between pb-4 border-b border-line">
+            <div>
+              <h2 className="text-lg font-semibold text-ink">Reading Contrast Mode</h2>
+              <p className="text-xs text-muted mt-1">
+                Preference is saved in browser localStorage for this device.
+              </p>
+            </div>
+            <div className="p-2 border border-line bg-surface-raised text-muted rounded-[2px]">
+              <Sliders size={16} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ThemeOption
+              active={state.theme === 'dark'}
+              icon={<Moon size={16} />}
+              label="Carbon Dark"
+              description="Low eye fatigue, high syntax contrast"
+              onClick={() => dispatch({ type: 'set-theme', theme: 'dark' })}
+            />
+            <ThemeOption
+              active={state.theme === 'light'}
+              icon={<Sun size={16} />}
+              label="Paper Light"
+              description="High daylight legibility, clean monochrome borders"
+              onClick={() => dispatch({ type: 'set-theme', theme: 'light' })}
+            />
+          </div>
+
+          <div className="pt-4 border-t border-line text-xs font-mono text-muted flex items-center justify-between">
+            <span>Font Rendering: Inter &amp; JetBrains Mono</span>
+            <span className="text-emerald-400">STATUS: OPTIMAL</span>
+          </div>
+        </section>
+      </div>
+    </Shell>
+  )
 }
 
-function ThemeOption({ active, icon, label, description, onClick }: { active: boolean; icon: React.ReactNode; label: string; description: string; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`theme-option ${active ? 'is-active' : ''}`}><span className="theme-icon">{icon}</span><span className="text-left"><strong>{label}</strong><small>{description}</small></span>{active && <Check className="ml-auto text-gold" size={17}/>}</button>
+function ThemeOption({
+  active,
+  icon,
+  label,
+  description,
+  onClick,
+}: {
+  active: boolean
+  icon: React.ReactNode
+  label: string
+  description: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`p-4 border text-left rounded-[2px] transition-colors flex items-start justify-between ${
+        active
+          ? 'border-emerald-500 bg-surface-raised'
+          : 'border-line bg-surface hover:border-line-strong hover:bg-surface-raised'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <span className={`p-2 border rounded-[2px] ${active ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 'border-line text-muted bg-surface'}`}>
+          {icon}
+        </span>
+        <div>
+          <strong className="block text-sm font-semibold text-ink">{label}</strong>
+          <small className="block text-xs text-muted mt-1 leading-relaxed">{description}</small>
+        </div>
+      </div>
+      {active && <Check className="text-emerald-400 mt-1" size={16} />}
+    </button>
+  )
 }
