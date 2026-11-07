@@ -334,7 +334,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <RepoMentorLogo />
               </Link>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed max-w-sm">
-                Static repository analyzer and spatial architecture workbench. Deconstruct unfamiliar codebases through AST traversal and deterministic execution call tracing.
+                Turns complex GitHub repositories into clear, visual guides so anyone can understand how the code works in plain English.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono">

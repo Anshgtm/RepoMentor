@@ -14,6 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Activity,
+  Zap,
+  Sparkles,
+  Play,
+  Pause,
+  CheckCircle2,
 } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -28,38 +33,58 @@ if (typeof window !== 'undefined') {
 const PIPELINE_STAGES = [
   {
     step: '01',
-    phase: 'SYNTAX INGESTION',
-    title: 'AST Multi-Language Lexing',
-    detail: 'Parses JavaScript, TypeScript, Python, and Go source files into abstract syntax trees without running unsafe sandbox environments.',
-    metric: 'Zero Sandbox Execution',
+    phase: 'READING CODE',
+    title: 'Reading Without Running',
+    detail: 'Reads code files like sentences in a book, identifying commands and names safely without needing to run any software.',
+    metric: '100% Safe (No Code Executed)',
+    icon: BookOpen,
+    flowBadge: 'Raw Code ➔ Clean Words',
+    accentColor: 'from-emerald-500/20 via-teal-500/10 to-transparent',
+    iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
   },
   {
     step: '02',
-    phase: 'TOPOLOGICAL SORT',
-    title: 'Dependency Graph Resolution',
-    detail: 'Calculates file import depth, cyclic dependency boundaries, and root bootstrapper origins through directed acyclic graphs.',
-    metric: 'DAG Topological Depth',
+    phase: 'CONNECTING PARTS',
+    title: 'Figuring Out What Depends on What',
+    detail: 'Like following furniture assembly instructions, maps out which files need other files so everything fits together in order.',
+    metric: 'Step-by-Step Order',
+    icon: GitBranch,
+    flowBadge: 'Dependencies ➔ Proper Order',
+    accentColor: 'from-blue-500/20 via-cyan-500/10 to-transparent',
+    iconBg: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
   },
   {
     step: '03',
-    phase: 'RUNTIME DISPATCH',
-    title: 'Endpoint & Route Mapping',
-    detail: 'Isolates HTTP controllers, middleware interceptors, and parameter validation schemas across framework router manifests.',
-    metric: 'Request Ingress Isolation',
+    phase: 'FINDING ENTRANCES',
+    title: 'Locating the Front Doors',
+    detail: 'Finds where visitors and users enter the app, like the reception desk in a building directing people to the right room.',
+    metric: 'All Entry Doors Found',
+    icon: Route,
+    flowBadge: 'User Requests ➔ App Doors',
+    accentColor: 'from-purple-500/20 via-indigo-500/10 to-transparent',
+    iconBg: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
   },
   {
     step: '04',
-    phase: 'DATA CONTINUITY',
-    title: 'Service-to-ORM Call Tracing',
-    detail: 'Traces execution paths from public router endpoints through domain business logic directly into database persistence models.',
-    metric: 'Continuous Call Pathing',
+    phase: 'FOLLOWING THE PATH',
+    title: 'Tracing the Paper Trail',
+    detail: 'Follows an action from clicking a button on screen, through the rules, all the way to saving information in the filing cabinet.',
+    metric: 'Complete Action Journey',
+    icon: Zap,
+    flowBadge: 'Button Click ➔ Saved in DB',
+    accentColor: 'from-amber-500/20 via-orange-500/10 to-transparent',
+    iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
   },
   {
     step: '05',
-    phase: 'SYNTHESIS ENGINE',
-    title: 'Sequenced Reading Architecture',
-    detail: 'Generates an actionable, step-by-step reading order for engineers onboarding onto the codebase without manual grepping.',
-    metric: 'Grounded Contributor Path',
+    phase: 'TOUR GUIDE',
+    title: 'Beginner-Friendly Reading Guide',
+    detail: 'Turns all the messy code into a clear, numbered guide so anyone new can understand the project without getting lost.',
+    metric: 'Simple Starting Guide',
+    icon: Sparkles,
+    flowBadge: 'Complex App ➔ Plain English Tour',
+    accentColor: 'from-emerald-500/20 via-amber-500/10 to-transparent',
+    iconBg: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
   },
 ]
 
@@ -115,16 +140,36 @@ export function HomePage() {
   const [selectedFile, setSelectedFile] = useState<string>('server.ts')
   const [activeTab, setActiveTab] = useState<'syntax' | 'flow' | 'guide'>('syntax')
   const [activeSpace, setActiveSpace] = useState<'atlas' | 'routes' | 'models'>('atlas')
+  const [activeStage, setActiveStage] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false)
 
   const heroRef = useRef<HTMLDivElement>(null)
   const problemRef = useRef<HTMLDivElement>(null)
   const pipelineRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const workbenchRef = useRef<HTMLDivElement>(null)
   const viewportContentRef = useRef<HTMLDivElement>(null)
   const spacesRef = useRef<HTMLDivElement>(null)
 
   const activeNode = ARC_FILES[selectedFile] || ARC_FILES['server.ts']
+
+  // Auto-tour timer for Code Breakdown section
+  useEffect(() => {
+    if (!isAutoPlaying) return
+    const interval = setInterval(() => {
+      setActiveStage((prev) => {
+        const next = (prev + 1) % PIPELINE_STAGES.length
+        cardRefs.current[next]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        })
+        return next
+      })
+    }, 2800)
+    return () => clearInterval(interval)
+  }, [isAutoPlaying])
 
   // GSAP Animations and ScrollTriggers
   useEffect(() => {
@@ -146,27 +191,56 @@ export function HomePage() {
           scrollTrigger: {
             trigger: problemRef.current,
             start: 'top 80%',
+            once: true,
           },
-          y: 32,
-          opacity: 0,
-          duration: 0.75,
-          stagger: 0.15,
+          y: 28,
+          duration: 0.6,
+          stagger: 0.12,
           ease: 'power2.out',
+          clearProps: 'all',
         })
       }
 
-      // 3. Pipeline Reel ScrollTrigger
+      // 3. Pipeline Reel ScrollTrigger with Staggered Cards (Refresh-Safe with full opacity)
       if (pipelineRef.current) {
-        gsap.from(pipelineRef.current, {
-          scrollTrigger: {
-            trigger: pipelineRef.current,
-            start: 'top 82%',
-          },
-          y: 30,
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-        })
+        const headerEl = pipelineRef.current.querySelector('.pipeline-header')
+        if (headerEl) {
+          gsap.fromTo(
+            headerEl,
+            { y: 16 },
+            {
+              y: 0,
+              duration: 0.45,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: pipelineRef.current,
+                start: 'top 92%',
+                once: true,
+              },
+              clearProps: 'all',
+            }
+          )
+        }
+
+        const cards = pipelineRef.current.querySelectorAll('.pipeline-card')
+        if (cards.length > 0) {
+          gsap.fromTo(
+            cards,
+            { y: 22 },
+            {
+              y: 0,
+              duration: 0.5,
+              stagger: 0.08,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: pipelineRef.current,
+                start: 'top 90%',
+                once: true,
+              },
+              clearProps: 'all',
+            }
+          )
+        }
       }
 
       // 4. Workbench Window ScrollTrigger
@@ -175,11 +249,12 @@ export function HomePage() {
           scrollTrigger: {
             trigger: workbenchRef.current,
             start: 'top 85%',
+            once: true,
           },
-          y: 40,
-          opacity: 0,
-          duration: 0.9,
+          y: 30,
+          duration: 0.7,
           ease: 'power3.out',
+          clearProps: 'all',
         })
       }
 
@@ -189,17 +264,30 @@ export function HomePage() {
           scrollTrigger: {
             trigger: spacesRef.current,
             start: 'top 85%',
+            once: true,
           },
-          y: 35,
-          opacity: 0,
-          duration: 0.75,
-          stagger: 0.12,
+          y: 28,
+          duration: 0.6,
+          stagger: 0.1,
           ease: 'power2.out',
+          clearProps: 'all',
         })
       }
+
+      // Ensure ScrollTrigger accurately measures scroll offsets upon page refresh / reload
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh()
+      })
     })
 
-    return () => ctx.revert()
+    const refreshTimeout = setTimeout(() => {
+      ScrollTrigger.refresh()
+    }, 200)
+
+    return () => {
+      clearTimeout(refreshTimeout)
+      ctx.revert()
+    }
   }, [])
 
   // Smooth micro-animation when active tab or file changes
@@ -215,8 +303,21 @@ export function HomePage() {
 
   const scrollTrack = (direction: 'left' | 'right') => {
     if (!trackRef.current) return
-    const offset = direction === 'left' ? -380 : 380
+    const offset = direction === 'left' ? -360 : 360
     trackRef.current.scrollBy({ left: offset, behavior: 'smooth' })
+    setActiveStage((prev) => {
+      const next = direction === 'left' ? Math.max(0, prev - 1) : Math.min(PIPELINE_STAGES.length - 1, prev + 1)
+      return next
+    })
+  }
+
+  const selectStage = (idx: number) => {
+    setActiveStage(idx)
+    cardRefs.current[idx]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
   }
 
   const handleQuickSubmit = (e: React.FormEvent) => {
@@ -341,21 +442,21 @@ export function HomePage() {
               </div>
               <div className="space-y-3 text-xs text-zinc-300 font-sans">
                 <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Deterministic Entrypoint Detection</strong>
+                  <strong className="text-white block font-heading">Automatic Starting Point Finder</strong>
                   <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Single-pass AST syntax analysis automatically isolates root bootstrappers, configuration contracts, and routers.
+                    Instantly finds where the project starts up, its configuration settings, and main entry doors without running code.
                   </p>
                 </div>
                 <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Static Request-to-DB Call Tracing</strong>
+                  <strong className="text-white block font-heading">Button-to-Database Journey</strong>
                   <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Follows incoming endpoints through controller dispatch and services into database persistence models.
+                    Traces an action from when someone clicks a button all the way through the app to where data is saved.
                   </p>
                 </div>
                 <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Source-Grounded Reading Sequence</strong>
+                  <strong className="text-white block font-heading">Step-by-Step Reading Order</strong>
                   <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Compiles a sequenced reading order derived from actual import hierarchies and call depth.
+                    Creates a beginner-friendly roadmap showing which files to read first, second, and third.
                   </p>
                 </div>
               </div>
@@ -363,81 +464,178 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Scrollable AST Compilation Pipeline (Smooth Draggable & Interactive GSAP Track) */}
+        {/* Interactive & Animated Code Breakdown Pipeline */}
         <section ref={pipelineRef} className="space-y-4 pt-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+          <div className="pipeline-header flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-1">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold mb-1">
-                <Activity size={14} />
-                <span>COMPILATION CONTINUUM</span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <Activity size={14} className="animate-pulse" />
+                <span>HOW IT WORKS</span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-400">Stage {activeStage + 1} of {PIPELINE_STAGES.length}</span>
               </div>
-              <h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white">
-                Static Analysis Architecture
+              <h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span>Code Breakdown Made Simple</span>
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Scroll through the five stages of codebase deconstruction.
+                5 simple stages showing how RepoMentor understands code without executing it.
               </p>
             </div>
 
-            {/* Scroll Navigation Controls */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-zinc-500 hidden sm:inline mr-2">
-                5 Analysis Stages
-              </span>
+            {/* Stage Quick Select & Navigation Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Stage Pill Quick Jump */}
+              <div className="flex items-center gap-1 bg-[#0b0c10] p-1 rounded-[4px] border border-white/[0.08]">
+                {PIPELINE_STAGES.map((stg, idx) => (
+                  <button
+                    key={stg.step}
+                    type="button"
+                    onClick={() => selectStage(idx)}
+                    className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono transition-all duration-200 cursor-pointer ${
+                      activeStage === idx
+                        ? 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                    }`}
+                    title={stg.title}
+                  >
+                    {stg.step}
+                  </button>
+                ))}
+              </div>
+
+              {/* Auto Tour Play/Pause Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[3px] text-xs font-mono border transition-all cursor-pointer ${
+                  isAutoPlaying
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                    : 'bg-[#0f1015] text-zinc-400 border-white/10 hover:border-white/20 hover:text-zinc-200'
+                }`}
+                aria-label="Toggle auto walkthrough"
+              >
+                {isAutoPlaying ? <Pause size={12} className="text-emerald-400" /> : <Play size={12} />}
+                <span className="hidden sm:inline">{isAutoPlaying ? 'Playing' : 'Auto Tour'}</span>
+              </button>
+
+              {/* Left & Right Arrow Buttons */}
               <button
                 type="button"
                 onClick={() => scrollTrack('left')}
-                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 flex items-center justify-center text-zinc-300 transition-colors cursor-pointer"
-                aria-label="Scroll left"
+                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
+                aria-label="Previous stage"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 type="button"
                 onClick={() => scrollTrack('right')}
-                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 flex items-center justify-center text-zinc-300 transition-colors cursor-pointer"
-                aria-label="Scroll right"
+                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
+                aria-label="Next stage"
               >
                 <ChevronRight size={16} />
               </button>
             </div>
           </div>
 
-          {/* Smooth Scrollable Horizontal Reel */}
+          {/* Smooth Scrollable Horizontal Reel with Animated Cards */}
           <div
             ref={trackRef}
             className="flex gap-4 overflow-x-auto pb-4 pt-2 scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {PIPELINE_STAGES.map((item) => (
-              <div
-                key={item.step}
-                className="min-w-[300px] sm:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start rounded-[6px] border border-white/[0.08] bg-[#0d0e14] p-5 space-y-4 hover:border-white/20 transition-all duration-300 shadow-[0_12px_30px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.06)]"
-              >
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                  <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[2px]">
-                    STAGE {item.step}
-                  </span>
-                  <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
-                    {item.phase}
-                  </span>
-                </div>
+            {PIPELINE_STAGES.map((item, idx) => {
+              const StageIcon = item.icon
+              const isActive = activeStage === idx
+              return (
+                <div
+                  key={item.step}
+                  ref={(el) => { cardRefs.current[idx] = el }}
+                  onClick={() => selectStage(idx)}
+                  className={`pipeline-card min-w-[300px] sm:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start rounded-[8px] border p-5 space-y-4 transition-all duration-300 relative overflow-hidden group cursor-pointer ${
+                    isActive
+                      ? 'border-emerald-500/80 bg-[#151926] -translate-y-2 shadow-[0_16px_40px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/50'
+                      : 'border-zinc-800 hover:border-zinc-600 bg-[#11131c] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.7)]'
+                  }`}
+                >
+                  {/* Glowing Top Accent Beam */}
+                  <div
+                    className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${item.accentColor} transition-all duration-300 ${
+                      isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'
+                    }`}
+                  />
 
-                <div className="space-y-1.5">
-                  <h4 className="font-heading text-sm font-semibold text-white">
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                    {item.detail}
-                  </p>
-                </div>
+                  {/* Header: Stage Badge + Icon + Phase */}
+                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[2px] transition-colors ${
+                          isActive
+                            ? 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                            : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
+                        }`}
+                      >
+                        STAGE {item.step}
+                      </span>
+                      <div
+                        className={`w-6 h-6 rounded-[3px] border flex items-center justify-center transition-all duration-300 ${item.iconBg} ${
+                          isActive ? 'scale-110 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'group-hover:scale-105'
+                        }`}
+                      >
+                        <StageIcon size={13} />
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider font-semibold">
+                      {item.phase}
+                    </span>
+                  </div>
 
-                <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-zinc-500">
-                  <span className="text-zinc-400">{item.metric}</span>
-                  <span className="text-emerald-400">Verified</span>
+                  {/* Title & Plain English Explanation */}
+                  <div className="space-y-1.5">
+                    <h4
+                      className={`font-heading text-sm font-semibold transition-colors duration-200 ${
+                        isActive ? 'text-emerald-200' : 'text-white group-hover:text-emerald-300'
+                      }`}
+                    >
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-zinc-200 leading-relaxed font-sans">
+                      {item.detail}
+                    </p>
+                  </div>
+
+                  {/* Visual Flow Transformation Pill */}
+                  <div
+                    className={`flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1.5 rounded-[3px] border transition-all duration-300 ${
+                      isActive
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200 shadow-sm'
+                        : 'bg-[#181a24] border-zinc-700/60 text-zinc-200 group-hover:text-white group-hover:border-zinc-500'
+                    }`}
+                  >
+                    <span className="text-emerald-400 font-bold transition-transform duration-300 group-hover:translate-x-0.5">
+                      ➜
+                    </span>
+                    <span>{item.flowBadge}</span>
+                  </div>
+
+                  {/* Footer: Metric & Live Verified Badge */}
+                  <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-zinc-300 font-medium">{item.metric}</span>
+                    <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      </span>
+                      <span>Verified</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
 
@@ -611,7 +809,7 @@ export function HomePage() {
                     {activeTab === 'flow' && (
                       <div className="space-y-4 pt-1">
                         <div className="text-[11px] text-zinc-500 uppercase tracking-wider">
-                          Static Request-to-Database Trace
+                          Step-by-Step Action Journey
                         </div>
                         <div className="space-y-2">
                           {activeNode.flow.map((step, idx) => (

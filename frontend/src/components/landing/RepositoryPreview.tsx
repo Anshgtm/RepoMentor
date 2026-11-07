@@ -36,7 +36,7 @@ const FILE_PREVIEWS: Record<string, { code: string; analysis: string; flow: stri
   },
   'src/services/guide.service.ts': {
     code: `import { Workspace } from '../models/Workspace'\nimport { parseAST } from '../lib/parser'\n\nexport class GuideService {\n  static async generate(workspaceId: string) {\n    const workspace = await Workspace.findById(workspaceId)\n    const entrypoints = await parseAST(workspace.files)\n    return { workspaceId, entrypoints, generatedAt: new Date() }\n  }\n}`,
-    analysis: 'Domain service encapsulating static analysis, AST traversal, and synthesis of beginner-friendly onboarding steps.',
+    analysis: 'Core service that reads repository files without running them and creates beginner-friendly onboarding steps.',
     flow: ['Load files from MongoDB', 'Run AST traversal engine', 'Identify root entry points', 'Return architectural orientation']
   },
   'src/models/Workspace.ts': {
@@ -167,7 +167,7 @@ export function RepositoryPreview() {
 
           {/* Analysis footer */}
           <div className="border-t border-line bg-surface-raised p-2.5 text-xs text-muted">
-            <span className="font-semibold text-ink font-mono mr-1">Static Heuristic:</span>
+            <span className="font-semibold text-ink font-mono mr-1">Plain English Summary:</span>
             {currentPreview.analysis}
           </div>
         </div>
