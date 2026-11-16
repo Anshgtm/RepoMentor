@@ -18,6 +18,10 @@ import {
   FolderTree,
   Sparkles,
   Sliders,
+  Bot,
+  Brain,
+  MessageSquareQuote,
+  Database,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useGithubSummary, useGuide, useWorkspace } from '../hooks/useWorkspaces'
@@ -28,12 +32,13 @@ import { SourceEditor } from '../components/workspace/SourceEditor'
 import { GithubSummary } from '../components/workspace/GithubSummary'
 import { GithubExplorer } from '../components/workspace/GithubExplorer'
 import { ImportantPaths } from '../components/workspace/ImportantPaths'
+import { RagAssistant } from '../components/workspace/RagAssistant'
 import type { SourceFile } from '../types/api'
 
 export function WorkspacePage() {
   const { id = '' } = useParams()
   const client = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'overview' | 'explorer' | 'routes' | 'guide'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'explorer' | 'routes' | 'guide' | 'rag'>('overview')
 
   const [files, setFiles] = useState<SourceFile[]>([
     {
@@ -95,15 +100,12 @@ export function WorkspacePage() {
         </div>
 
         {/* Workspace Hero Header */}
-        <div className="rounded-xl border border-white/10 bg-[#0f1118] p-6 shadow-sm space-y-4">
+        <div className="rounded-xl border border-white/[0.08] bg-[#141416] p-6 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[2px] flex items-center gap-1.5">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                  </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[3px] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   <span>{workspace.state.replaceAll('_', ' ')}</span>
                 </span>
                 <span className="text-zinc-600 font-mono text-xs">/</span>
@@ -132,7 +134,7 @@ export function WorkspacePage() {
                   <span>Local source snapshot</span>
                 )}
                 <span className="text-zinc-600">·</span>
-                <span>Last analyzed {new Date().toLocaleDateString()}</span>
+                <span>Active workspace session</span>
               </div>
             </div>
 
@@ -177,20 +179,33 @@ export function WorkspacePage() {
             </div>
           </div>
 
-          {/* Metrics Grid */}
+          {/* Real Repository Metrics Grid (No fake statistics) */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-white/[0.08]">
             <MetricCard
               icon={<FileText size={15} className="text-emerald-400" />}
               label="Source Files"
               value={fileCount.toString().padStart(2, '0')}
-              detail="Indexed & parsed"
+              detail="Clean filtered index"
               onClick={() => setActiveTab('explorer')}
             />
             <MetricCard
-              icon={<GitBranch size={15} className="text-blue-400" />}
-              label="Pipeline State"
-              value={workspace.state.replace('_', ' ')}
-              detail="Compilation phase"
+              icon={<Cpu size={15} className="text-blue-400" />}
+              label="Primary Language"
+              value={githubSummary.data?.language || workspace.language || 'Multi-stack'}
+              detail="Detected from code"
+            />
+            <MetricCard
+              icon={<Route size={15} className="text-purple-400" />}
+              label="API Endpoints"
+              value={routeCount.toString().padStart(2, '0')}
+              detail="Routes detected"
+              onClick={() => setActiveTab('routes')}
+            />
+            <MetricCard
+              icon={<Database size={15} className="text-amber-400" />}
+              label="Data Models"
+              value={(githubSummary.data?.analysis?.data_models.length || 0).toString().padStart(2, '0')}
+              detail="Schemas & entities"
             />
             <MetricCard
               icon={<CheckCircle2 size={15} className="text-emerald-400" />}
@@ -198,18 +213,6 @@ export function WorkspacePage() {
               value={hasGuide ? 'Ready' : 'Pending'}
               detail={hasGuide ? 'Guide compiled' : 'Awaiting snapshot'}
               onClick={() => setActiveTab('guide')}
-            />
-            <MetricCard
-              icon={<ShieldCheck size={15} className="text-purple-400" />}
-              label="Security Audit"
-              value="83 / 100"
-              detail="Zero sandbox run"
-            />
-            <MetricCard
-              icon={<Gauge size={15} className="text-amber-400" />}
-              label="Maintainability"
-              value="70 / 100"
-              detail="Low call depth"
             />
           </div>
         </div>
@@ -243,6 +246,13 @@ export function WorkspacePage() {
             icon={<BookOpen size={14} />}
             label={hasGuide ? 'Contributor Guide' : 'Source Snapshot & Guide'}
           />
+          <TabButton
+            active={activeTab === 'rag'}
+            onClick={() => setActiveTab('rag')}
+            icon={<Bot size={14} className="text-emerald-400" />}
+            label="Ask RepoMentor AI (RAG)"
+            badge="Free AI"
+          />
         </div>
 
         {/* Error Alert */}
@@ -258,6 +268,32 @@ export function WorkspacePage() {
         {/* Tab 1: Overview & Insights */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Quick AI Spotlight Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-gradient-to-r from-emerald-950/40 via-[#141416] to-[#141416] border border-emerald-500/20 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                  <Brain size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">Ask RepoMentor AI (RAG)</span>
+                    <span className="text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Free &amp; Unlimited</span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Ask questions, get the simplest conceptual breakdown, and cite exact source lines instantly.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('rag')}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[4px] bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shrink-0 cursor-pointer shadow-sm"
+              >
+                <Bot size={14} />
+                <span>Ask AI Now</span>
+              </button>
+            </div>
+
             <GithubSummary
               summary={githubSummary.data}
               loading={githubSummary.isLoading}
@@ -308,6 +344,13 @@ export function WorkspacePage() {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab 5: Free RAG AI Assistant (Zero Token Cost, Unlimited Q&A) */}
+        {activeTab === 'rag' && (
+          <div>
+            <RagAssistant workspace={workspace} />
           </div>
         )}
       </div>

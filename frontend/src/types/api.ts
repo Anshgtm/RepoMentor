@@ -5,10 +5,38 @@ export type Workspace = {
   state: string
   source_file_count: number
   guide_generated_at?: string
+  updated_at?: string
+  created_at?: string
+  language?: string | null
 }
 
 export type SourceFile = { file_path: string; file_content: string }
 export type SetupChecklistItem = { id: string; label: string; status: 'found' | 'not_found'; instructions: string; evidence: string[] }
+
+export type DirectoryGroup = {
+  directory: string
+  count: number
+  role: string
+  sample_files: string[]
+}
+
+export type TechnologyItem = {
+  name: string
+  purpose: string
+  category: 'frontend' | 'backend' | 'database_infra' | 'tooling'
+}
+
+export type StructuredOverview = {
+  what_it_does: { title: string; content: string; is_verified: boolean; evidence?: string }
+  problem_it_solves: { title: string; content: string; is_verified: boolean; evidence?: string }
+  who_it_is_for: { title: string; content: string; is_verified: boolean; evidence?: string }
+  how_it_works: { title: string; content: string; is_verified: boolean; steps: string[] }
+  technologies: {
+    frontend: TechnologyItem[]
+    backend: TechnologyItem[]
+    database_or_infra: TechnologyItem[]
+  }
+}
 
 export type GithubSummary = {
   available: boolean
@@ -34,7 +62,9 @@ export type GithubSummary = {
     architecture_notes: string[]
     technologies: string[]
     important_paths: { label: string; steps: string[]; evidence: string[] }[]
+    directory_groups?: DirectoryGroup[]
   }
+  structured_overview?: StructuredOverview
   project_overview?: ProjectOverview
   readme_excerpt?: string
   reason?: string
@@ -68,4 +98,44 @@ export type ProjectOverview = {
   project_structure: ProjectOverviewSection
   setup_and_execution: ProjectOverviewSection
   limitations_and_missing_information: ProjectOverviewSection
+}
+
+export type RagSource = {
+  file_path: string
+  start_line: number
+  end_line: number
+  relevance_score: number
+  preview: string
+}
+
+export type RagAnswer = {
+  answer: string
+  simplest_explanation: string
+  sources: RagSource[]
+  model_mode: string
+  query?: string
+}
+
+export type RagSummary = {
+  title: string
+  headline: string
+  what_is_this_project?: string
+  problem_it_solves?: string
+  who_is_it_for?: string
+  target_audience?: string
+  technologies_used?: { name: string; reason: string }[]
+  main_features?: string[]
+  folder_explanations?: { path: string; responsibility: string }[]
+  how_parts_work_together?: { step: number; title: string; explanation: string }[]
+  how_to_run_locally?: { step: number; command: string; explanation: string }[]
+  tech_stack: string[]
+  entry_points: string[]
+  core_parts: {
+    name: string
+    explanation: string
+  }[]
+  how_data_flows: string[]
+  total_files_indexed: number
+  loaded_urls?: string[]
+  free_guarantee: string
 }

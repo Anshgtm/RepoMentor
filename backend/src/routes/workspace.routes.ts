@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { identitySchema, sourceSchema } from '../validation/schemas.js'
 import { buildGuide } from '../services/guide.service.js'
+import { loadWebsiteUrl, queryRag, summarizeRag } from '../services/rag.service.js'
 import { createWorkspace, findWorkspace, listWorkspaces, saveGuide, saveSource, serializeWorkspace } from '../services/workspace.service.js'
 import type { SourceFile } from '../types/workspace.js'
 import { summarizeGithubRepository } from '../services/github.service.js'
@@ -65,6 +66,38 @@ export function workspaceRoutes(emit: (event: string, payload: unknown) => void)
     const item = await findWorkspace(req.params.id)
     if (!item?.guide) return res.status(404).json({ detail: 'Current guide not found.' })
     res.json({ repository: serializeWorkspace(item), source_snapshot: { file_count: item.source_file_count, accepted_at: item.updatedAt || new Date().toISOString() }, guide: item.guide })
+  })
+  router.post('/:id/rag/ask', async (req, res) => {
+    try {
+      const item = await findWorkspace(req.params.id, true)
+      if (!item) return res.status(404).json({ detail: 'Workspace not found.' })
+      const query = typeof req.body?.query === 'string' ? req.body.query : ''
+      if (!query.trim()) return res.status(422).json({ detail: 'A question or query is required.' })
+      const answer = await queryRag(item, query.trim())
+      res.json(answer)
+    } catch (error) {
+      res.status(500).json({ detail: error instanceof Error ? error.message : 'RAG query failed.' })
+    }
+  })
+  router.get('/:id/rag/summary', async (req, res) => {
+    try {
+      const item = await findWorkspace(req.params.id, true)
+      if (!item) return res.status(404).json({ detail: 'Workspace not found.' })
+      const summary = await summarizeRag(item)
+      res.json(summary)
+    } catch (error) {
+      res.status(500).json({ detail: error instanceof Error ? error.message : 'RAG summarization failed.' })
+    }
+  })
+  router.post('/:id/rag/load-url', async (req, res) => {
+    try {
+      const url = typeof req.body?.url === 'string' ? req.body.url.trim() : ''
+      if (!url) return res.status(422).json({ detail: 'A valid website URL is required.' })
+      const result = await loadWebsiteUrl(url)
+      res.json(result)
+    } catch (error) {
+      res.status(500).json({ detail: error instanceof Error ? error.message : 'Loading website URL failed.' })
+    }
   })
   return router
 }

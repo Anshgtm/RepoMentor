@@ -80,7 +80,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
     <Shell>
       <div className="min-h-[82vh] flex items-center justify-center px-4 py-12 sm:px-6" style={{ fontFamily: "'Inter', sans-serif" }}>
         {/* Main Card: Arc UI Specular Container */}
-        <div className="w-full max-w-[440px] rounded-[6px] border border-white/[0.1] bg-[#0d0e13] p-7 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.8),inset_0_1px_0_0_rgba(255,255,255,0.08)]" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="w-full max-w-[440px] rounded-[6px] border border-white/[0.1] bg-[#141416] p-7 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.8),inset_0_1px_0_0_rgba(255,255,255,0.08)]" style={{ fontFamily: "'Inter', sans-serif" }}>
           {/* Header */}
           <div className="text-center pb-6">
             <h1 className="text-[16px] font-semibold tracking-tight text-white font-sans">

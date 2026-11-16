@@ -6,6 +6,44 @@ import type { SourceFile, WorkspaceRecord } from '../types/workspace.js'
 export const memoryWorkspaces: WorkspaceRecord[] = []
 
 export function serializeWorkspace(item: any) {
+  const sampleFiles = item.source_files || []
+  let detectedLanguage: string | null = null
+
+  if (sampleFiles.length > 0) {
+    const extCounts: Record<string, number> = {}
+    for (const f of sampleFiles) {
+      const ext = f.file_path ? f.file_path.split('.').pop()?.toLowerCase() : ''
+      if (ext && ext.length <= 5) extCounts[ext] = (extCounts[ext] || 0) + 1
+    }
+    const topExt = Object.entries(extCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+    const extMap: Record<string, string> = {
+      ts: 'TypeScript',
+      tsx: 'TypeScript',
+      js: 'JavaScript',
+      jsx: 'JavaScript',
+      py: 'Python',
+      go: 'Go',
+      rs: 'Rust',
+      java: 'Java',
+      cpp: 'C++',
+      c: 'C',
+      rb: 'Ruby',
+      php: 'PHP',
+    }
+    if (topExt && extMap[topExt]) {
+      detectedLanguage = extMap[topExt]
+    }
+  }
+
+  if (!detectedLanguage && item.guide?.project_overview?.technology_stack?.bullets?.length) {
+    const techs = item.guide.project_overview.technology_stack.bullets.join(' ').toLowerCase()
+    if (techs.includes('typescript')) detectedLanguage = 'TypeScript'
+    else if (techs.includes('javascript') || techs.includes('node')) detectedLanguage = 'JavaScript'
+    else if (techs.includes('python')) detectedLanguage = 'Python'
+    else if (techs.includes('rust')) detectedLanguage = 'Rust'
+    else if (techs.includes('go')) detectedLanguage = 'Go'
+  }
+
   return {
     id: String(item._id || item.id),
     repository_name: item.repository_name,
@@ -13,6 +51,9 @@ export function serializeWorkspace(item: any) {
     state: item.state,
     source_file_count: item.source_file_count || item.source_files?.length || 0,
     guide_generated_at: item.guide?.generated_at,
+    updated_at: item.updatedAt || item.guide?.generated_at || item.createdAt,
+    created_at: item.createdAt,
+    language: detectedLanguage,
   }
 }
 

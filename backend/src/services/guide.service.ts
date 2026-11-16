@@ -28,7 +28,15 @@ function buildSetupChecklist(files: WorkspaceRecord['source_files']): SetupCheck
 function inferLocalProjectDescription(workspace: WorkspaceRecord, files: WorkspaceRecord['source_files']) {
   const name = workspace.repository_name.replace(/[-_]+/g, ' ')
   const text = (files || []).map(file => file.file_content).join('\n').toLowerCase()
-  const domain = /task|todo|project|kanban|issue/.test(`${name} ${text}`) ? 'organize tasks and track work' : /shop|store|commerce|cart|product/.test(`${name} ${text}`) ? 'manage products or commerce workflows' : /blog|cms|content|article/.test(`${name} ${text}`) ? 'publish and manage written content' : /chat|message|social|community/.test(`${name} ${text}`) ? 'support communication and collaboration' : 'support a software workflow'
+  const domain = /task|todo|project|kanban|issue/.test(`${name} ${text}`)
+    ? 'organize tasks and track project work'
+    : /shop|store|commerce|cart|product/.test(`${name} ${text}`)
+    ? 'manage products and commerce workflows'
+    : /blog|cms|content|article/.test(`${name} ${text}`)
+    ? 'publish and manage content'
+    : /chat|message|social|community/.test(`${name} ${text}`)
+    ? 'support communication and messaging'
+    : 'manage application logic and data operations'
   return `${name.replace(/\b\w/g, letter => letter.toUpperCase())} is a project designed to ${domain}. This description is inferred from the repository name and supplied source files because the README does not include a clear project overview.`
 }
 

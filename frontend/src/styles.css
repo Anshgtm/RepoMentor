@@ -12,10 +12,10 @@
 :root {
   /* Canvas & Surfaces */
   --arc-canvas: #08090c;
-  --arc-frame: #0e1015;
+  --arc-frame: #141416;
   --arc-sidebar: #0a0b0f;
-  --arc-surface: #12141a;
-  --arc-surface-hover: #191c24;
+  --arc-surface: #141416;
+  --arc-surface-hover: #1c1c1f;
   --arc-input: #08090d;
 
   /* Hairline Borders */

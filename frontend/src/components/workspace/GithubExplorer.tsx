@@ -290,6 +290,17 @@ export function GithubExplorer({ workspaceId }: { workspaceId: string }) {
   )
 }
 
+const EXCLUDED_NAMES = ['__pycache__', '.git', 'node_modules', '.next', 'dist', 'build', '.turbo', '.cache', 'coverage', 'vendor']
+const EXCLUDED_EXTENSIONS = ['pyc', 'pyo', 'pyd', 'exe', 'dll', 'so', 'dylib', 'class', 'jar', 'bin', 'pt', 'pth', 'onnx', 'safetensors', 'h5', 'pkl', 'map', 'min.js', 'min.css']
+
+function isIgnoredEntry(entry: GithubBrowserEntry): boolean {
+  const name = entry.name.toLowerCase()
+  if (EXCLUDED_NAMES.includes(name)) return true
+  const ext = name.split('.').pop()?.toLowerCase()
+  if (entry.type === 'file' && ext && EXCLUDED_EXTENSIONS.includes(ext)) return true
+  return false
+}
+
 function Tree({
   entries,
   depth,
@@ -309,9 +320,9 @@ function Tree({
   onToggle: (path: string) => void
   onSelect: (path: string) => void
 }) {
-  const visible = entries.filter(
-    (entry) => !search || entry.path.toLowerCase().includes(search.toLowerCase())
-  )
+  const visible = entries
+    .filter((entry) => !isIgnoredEntry(entry))
+    .filter((entry) => !search || entry.path.toLowerCase().includes(search.toLowerCase()))
 
   if (visible.length === 0) {
     return <div className="py-4 text-center text-[11px] font-mono text-zinc-500">No matching files found.</div>

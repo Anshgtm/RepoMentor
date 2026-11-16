@@ -1,22 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import {
-  LogOut,
-  Menu,
-  ShieldAlert,
-  X,
   Moon,
   Sun,
-  ChevronDown,
-  Compass,
-  FolderTree,
-  Layers,
-  Sliders,
-  Shield,
-  FileText,
-  LogIn,
-  UserPlus
+  ShieldAlert,
 } from 'lucide-react'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
@@ -31,39 +19,21 @@ if (typeof window !== 'undefined') {
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const menuRef = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
   const { state, dispatch } = useAppState()
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-  // GSAP Menu Reveal and Stagger Animation
+  // Track window scroll to enhance fixed navbar elevation
   useEffect(() => {
-    if (menuOpen && dropdownRef.current) {
-      if (buttonRef.current) {
-        gsap.fromTo(
-          buttonRef.current,
-          { scale: 0.85, rotate: -20 },
-          { scale: 1, rotate: 0, duration: 0.28, ease: 'back.out(2.2)' }
-        )
-      }
-
-      gsap.fromTo(
-        dropdownRef.current,
-        { opacity: 0, scale: 0.92, y: -10, transformOrigin: 'top right' },
-        { opacity: 1, scale: 1, y: 0, duration: 0.28, ease: 'power3.out' }
-      )
-
-      const items = dropdownRef.current.querySelectorAll('.menu-route-item')
-      gsap.fromTo(
-        items,
-        { opacity: 0, x: -10 },
-        { opacity: 1, x: 0, duration: 0.2, stagger: 0.025, ease: 'power2.out', delay: 0.04 }
-      )
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15)
     }
-  }, [menuOpen])
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Lenis + GSAP ScrollTrigger Integration for Buttery Inertia Scrolling
   useEffect(() => {
@@ -90,18 +60,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    const closeMenu = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', closeMenu)
-    return () => document.removeEventListener('mousedown', closeMenu)
-  }, [])
-
   const requestLogout = () => {
-    setMenuOpen(false)
     setLogoutOpen(true)
   }
 
@@ -120,208 +79,137 @@ export function Shell({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'set-theme', theme: state.theme === 'dark' ? 'light' : 'dark' })
   }
 
+  // Smooth scroll to problem / Why RepoMentor section if navigated with hash
+  useEffect(() => {
+    if (location.pathname === '/' && location.hash === '#why-repomentor') {
+      const scrollTimer = setTimeout(() => {
+        const el = document.getElementById('why-repomentor')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 120)
+      return () => clearTimeout(scrollTimer)
+    }
+  }, [location.pathname, location.hash])
+
+  const handleWhyClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (location.pathname === '/') {
+      const el = document.getElementById('why-repomentor')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+        window.history.pushState(null, '', '/#why-repomentor')
+      }
+    } else {
+      navigate('/#why-repomentor')
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#08090b] text-[#f8fafc]">
-      {/* Vercel / Linear Style Header */}
-      <header className="rm-header">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-5">
-            <Link to="/" className="inline-flex items-center gap-2 text-white no-underline">
+      {/* Fixed Floating Navbar with 30px Border Radius */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-3 sm:px-6 pt-3 sm:pt-4 pointer-events-none transition-all duration-300">
+        <div
+          className={`pointer-events-auto mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-2 sm:px-6 transition-all duration-300 border ${
+            scrolled
+              ? 'border-white/[0.16] bg-[#141416]/95 backdrop-blur-xl shadow-[0_16px_36px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)]'
+              : 'border-white/[0.1] bg-[#141416]/85 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.06)]'
+          }`}
+          style={{ borderRadius: '30px' }}
+        >
+          {/* Left: Brand Logo */}
+          <div className="flex items-center flex-1 justify-start">
+            <Link to="/" className="inline-flex items-center gap-2 text-white no-underline shrink-0 group">
               <RepoMentorLogo />
             </Link>
           </div>
 
-          <nav className="flex items-center gap-3 sm:gap-4">
-            <div className="hidden sm:flex items-center gap-4 text-xs font-medium">
-              <Link to="/new" className="text-zinc-400 hover:text-white transition-colors">
-                Analyze
-              </Link>
-              {state.authEmail && (
-                <Link to="/my-workspace" className="text-zinc-400 hover:text-white transition-colors">
-                  Workspaces
-                </Link>
-              )}
-            </div>
+          {/* Center: Evenly Distributed Navigation Links */}
+          <nav className="flex items-center justify-center flex-auto gap-1 sm:gap-2 md:gap-4 lg:gap-6 px-1 sm:px-2 text-xs font-medium">
+            <Link
+              to="/"
+              className={`px-3 py-1.5 rounded-full transition-all ${
+                location.pathname === '/'
+                  ? 'text-white bg-white/[0.1] font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+              }`}
+            >
+              Home
+            </Link>
 
-            {/* Menu Bar Trigger (Desktop & Mobile) - Icon Only with Micro Animation */}
-            <div ref={menuRef} className="relative">
-              <button
-                ref={buttonRef}
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                className="w-7 h-7 rounded-[3px] border border-white/10 bg-zinc-900 hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                aria-expanded={menuOpen}
-                aria-label="Navigation Menu"
-              >
-                {menuOpen ? (
-                  <X size={14} className="transition-transform duration-200 rotate-90" />
-                ) : (
-                  <Menu size={14} className="transition-transform duration-200" />
-                )}
-              </button>
+            <Link
+              to="/new"
+              className={`px-3 py-1.5 rounded-full transition-all ${
+                location.pathname === '/new'
+                  ? 'text-white bg-white/[0.1] font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+              }`}
+            >
+              Analyze
+            </Link>
 
-              {menuOpen && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute right-0 top-full mt-2 w-64 rounded-[6px] border border-white/[0.1] bg-[#0c0d12] p-3 shadow-[0_20px_45px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.08)] z-50 select-none"
-                  role="menu"
-                >
-                  {/* Category: Primary Application */}
-                  <div className="pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold px-2 block mb-1">
-                      Application
-                    </span>
-                    <div className="space-y-0.5">
-                      <Link
-                        to="/"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <Compass size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Home</span>
-                      </Link>
+            <a
+              href="/#why-repomentor"
+              onClick={handleWhyClick}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                location.pathname === '/' && location.hash === '#why-repomentor'
+                  ? 'text-white bg-white/[0.1] font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+              }`}
+            >
+              Why RepoMentor?
+            </a>
 
-                      <Link
-                        to="/new"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <FolderTree size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Analyze Repository</span>
-                      </Link>
-
-                      <Link
-                        to="/my-workspace"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <Layers size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Workspaces</span>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Category: Preferences & Platform */}
-                  <div className="pt-2 pb-2 border-t border-white/[0.06]">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold px-2 block mb-1">
-                      Preferences &amp; Legal
-                    </span>
-                    <div className="space-y-0.5">
-                      <Link
-                        to="/settings"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <Sliders size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Interface Preferences</span>
-                      </Link>
-
-                      <Link
-                        to="/privacy"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <Shield size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Privacy Policy</span>
-                      </Link>
-
-                      <Link
-                        to="/terms"
-                        onClick={() => setMenuOpen(false)}
-                        className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                      >
-                        <FileText size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                        <span>Terms of Service</span>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Category: Account & Session */}
-                  <div className="pt-2 border-t border-white/[0.06]">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold px-2 block mb-1">
-                      Account Access
-                    </span>
-                    {state.authEmail ? (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="px-2.5 py-1 text-[11px] font-mono text-zinc-400 truncate bg-zinc-900/60 rounded-[3px] border border-white/[0.04]">
-                          {state.authEmail}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={requestLogout}
-                          className="menu-route-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
-                        >
-                          <LogOut size={14} />
-                          <span>Sign out</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-0.5">
-                        <Link
-                          to="/login"
-                          onClick={() => setMenuOpen(false)}
-                          className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-zinc-300 hover:text-white hover:bg-zinc-800/80 hover:translate-x-0.5 transition-all group"
-                        >
-                          <LogIn size={14} className="text-zinc-400 group-hover:text-emerald-400 transition-colors" />
-                          <span>Sign in</span>
-                        </Link>
-
-                        <Link
-                          to="/signup"
-                          onClick={() => setMenuOpen(false)}
-                          className="menu-route-item flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 hover:translate-x-0.5 transition-all group"
-                        >
-                          <UserPlus size={14} className="text-emerald-400" />
-                          <span>Create account</span>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2.5 pl-2 border-l border-white/[0.08]">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="w-7 h-7 rounded-[3px] border border-white/10 bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                title={`Switch to ${state.theme === 'dark' ? 'Light' : 'Dark'} mode`}
-                aria-label="Toggle theme"
-              >
-                {state.theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-              </button>
-
-              {state.authEmail ? (
-                <div className="hidden sm:flex items-center gap-2">
-                  <span className="hidden md:inline-block text-xs font-mono text-zinc-400 bg-zinc-900 px-2 py-1 rounded-[3px] border border-white/[0.06]">
-                    {state.authEmail}
-                  </span>
-                  <button
-                    type="button"
-                    className="rm-btn-secondary text-xs py-1 px-2.5 rounded-[3px]"
-                    onClick={requestLogout}
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="hidden sm:flex items-center gap-2">
-                  <Link className="text-xs text-zinc-400 hover:text-white px-2 py-1 transition-colors" to="/login">
-                    Sign in
-                  </Link>
-                  <Link className="rm-btn-primary text-xs py-1 px-3 rounded-[3px]" to="/signup">
-                    Get Started
-                  </Link>
-                </div>
-              )}
-            </div>
+            <Link
+              to="/terms"
+              className={`px-3 py-1.5 rounded-full transition-all ${
+                location.pathname === '/terms' || location.pathname === '/privacy'
+                  ? 'text-white bg-white/[0.1] font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+              }`}
+            >
+              Site Policy
+            </Link>
           </nav>
+
+          {/* Right: Theme & CTA Button */}
+          <div className="flex items-center flex-1 justify-end gap-2 sm:gap-2.5">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full border border-white/10 bg-zinc-900/90 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              title={`Switch to ${state.theme === 'dark' ? 'Light' : 'Dark'} mode`}
+              aria-label="Toggle theme"
+            >
+              {state.theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
+
+            {state.authEmail ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden md:inline-block text-xs font-mono text-zinc-400 bg-zinc-900 px-2.5 py-1 rounded-full border border-white/[0.06]">
+                  {state.authEmail}
+                </span>
+                <button
+                  type="button"
+                  className="rm-btn-secondary text-xs py-1 px-3 rounded-full"
+                  onClick={requestLogout}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link className="rm-btn-primary text-xs py-1.5 px-3.5 rounded-full" to="/signup">
+                  Get Started
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Main Viewport */}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-20 sm:pt-24">{children}</main>
 
       {/* Proper Arc / Linear Inspired Footer */}
       <footer className="border-t border-white/[0.08] bg-[#07080b] pt-16 pb-12 mt-20">
@@ -476,7 +364,7 @@ function LogoutDialog({ onCancel, onConfirm }: { onCancel: () => void; onConfirm
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div className="rounded-[4px] border border-white/10 bg-[#121318] max-w-sm w-full p-6 space-y-4 shadow-2xl" role="dialog">
+      <div className="rounded-[4px] border border-white/10 bg-[#141416] max-w-sm w-full p-6 space-y-4 shadow-2xl" role="dialog">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-[3px] bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
             <ShieldAlert size={16} />

@@ -13,18 +13,19 @@ import {
   Command,
   ChevronLeft,
   ChevronRight,
-  Activity,
-  Zap,
   Sparkles,
   Play,
   Pause,
-  CheckCircle2,
+  FolderGit2,
+  Github,
+  Compass,
 } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Shell } from '../components/layout/Shell'
 import { useWorkspaces } from '../hooks/useWorkspaces'
 import { useAppState } from '../state/AppState'
+import type { Workspace } from '../types/api'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -33,58 +34,43 @@ if (typeof window !== 'undefined') {
 const PIPELINE_STAGES = [
   {
     step: '01',
-    phase: 'READING CODE',
-    title: 'Reading Without Running',
-    detail: 'Reads code files like sentences in a book, identifying commands and names safely without needing to run any software.',
-    metric: '100% Safe (No Code Executed)',
+    phase: 'Reading Code',
+    title: 'Read & index files safely',
+    detail: 'Scans source files, folder layouts, and imports like reading chapters in a book—without running any untrusted code.',
+    summary: 'Source files ➔ Clean index',
     icon: BookOpen,
-    flowBadge: 'Raw Code ➔ Clean Words',
-    accentColor: 'from-emerald-500/20 via-teal-500/10 to-transparent',
-    iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
   },
   {
     step: '02',
-    phase: 'CONNECTING PARTS',
-    title: 'Figuring Out What Depends on What',
-    detail: 'Like following furniture assembly instructions, maps out which files need other files so everything fits together in order.',
-    metric: 'Step-by-Step Order',
+    phase: 'Mapping Links',
+    title: 'Connect how files relate',
+    detail: 'Maps out which files import and depend on each other, showing how modules fit together.',
+    summary: 'Dependencies ➔ Visual map',
     icon: GitBranch,
-    flowBadge: 'Dependencies ➔ Proper Order',
-    accentColor: 'from-blue-500/20 via-cyan-500/10 to-transparent',
-    iconBg: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
   },
   {
     step: '03',
-    phase: 'FINDING ENTRANCES',
-    title: 'Locating the Front Doors',
-    detail: 'Finds where visitors and users enter the app, like the reception desk in a building directing people to the right room.',
-    metric: 'All Entry Doors Found',
+    phase: 'Entry Points',
+    title: 'Find where execution starts',
+    detail: 'Locates main starting files—such as web servers, route hubs, and CLI commands—where the application boots up.',
+    summary: 'Structure ➔ Starting door',
     icon: Route,
-    flowBadge: 'User Requests ➔ App Doors',
-    accentColor: 'from-purple-500/20 via-indigo-500/10 to-transparent',
-    iconBg: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
   },
   {
     step: '04',
-    phase: 'FOLLOWING THE PATH',
-    title: 'Tracing the Paper Trail',
-    detail: 'Follows an action from clicking a button on screen, through the rules, all the way to saving information in the filing cabinet.',
-    metric: 'Complete Action Journey',
-    icon: Zap,
-    flowBadge: 'Button Click ➔ Saved in DB',
-    accentColor: 'from-amber-500/20 via-orange-500/10 to-transparent',
-    iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    phase: 'Tracing Flows',
+    title: 'Follow user actions to data',
+    detail: 'Traces complete execution paths from a user click on screen down through backend services to database records.',
+    summary: 'Button click ➔ Database record',
+    icon: Compass,
   },
   {
     step: '05',
-    phase: 'TOUR GUIDE',
-    title: 'Beginner-Friendly Reading Guide',
-    detail: 'Turns all the messy code into a clear, numbered guide so anyone new can understand the project without getting lost.',
-    metric: 'Simple Starting Guide',
+    phase: 'Beginner Guide',
+    title: 'Generate plain English guide',
+    detail: 'Translates architectural connections into simple explanations, real-world analogies, and a prioritized reading sequence.',
+    summary: 'Codebase ➔ Beginner guide',
     icon: Sparkles,
-    flowBadge: 'Complex App ➔ Plain English Tour',
-    accentColor: 'from-emerald-500/20 via-amber-500/10 to-transparent',
-    iconBg: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
   },
 ]
 
@@ -101,34 +87,107 @@ const ARC_FILES: Record<string, FileNode> = {
   'server.ts': {
     path: 'src/server.ts',
     name: 'server.ts',
-    role: 'Root Entrypoint',
+    role: 'Application Entry Point',
     lines: 48,
     code: `import express from 'express'\nimport { apiRoutes } from './routes/api.routes'\nimport { connectDatabase } from './services/db'\n\nexport const app = express()\napp.use(express.json())\napp.use('/api', apiRoutes)\n\nexport async function bootstrap() {\n  await connectDatabase()\n  app.listen(8000, () => console.log('Listening on :8000'))\n}\nbootstrap()`,
-    flow: ['Client HTTP Request', 'express.json() parser', 'Router: /api', 'Service Layer Dispatch']
+    flow: [
+      'Client sends HTTP request to the server',
+      'Express parses the incoming JSON request body',
+      'Matches route path and hands off to apiRoutes',
+      'Dispatches to business logic service layer',
+    ],
   },
   'api.routes.ts': {
     path: 'src/routes/api.routes.ts',
     name: 'api.routes.ts',
-    role: 'Router Dispatcher',
+    role: 'Route Controller',
     lines: 92,
     code: `import { Router } from 'express'\nimport { WorkspaceService } from '../services/workspace.service'\n\nexport const apiRoutes = Router()\n\napiRoutes.post('/workspaces/:id/guide', async (req, res) => {\n  const guide = await WorkspaceService.buildGuide(req.params.id)\n  res.json({ status: 'ok', guide })\n})`,
-    flow: ['apiRoutes router', 'POST /workspaces/:id/guide', 'WorkspaceService.buildGuide()', 'Workspace Model commit']
+    flow: [
+      'Receives POST /workspaces/:id/guide',
+      'Extracts workspace ID from request parameters',
+      'Calls WorkspaceService.buildGuide()',
+      'Returns JSON response with generated guide',
+    ],
   },
   'workspace.service.ts': {
     path: 'src/services/workspace.service.ts',
     name: 'workspace.service.ts',
-    role: 'Business Logic',
+    role: 'Core Business Logic',
     lines: 184,
     code: `import { Workspace } from '../models/Workspace'\nimport { parseAST } from '../lib/parser'\n\nexport class WorkspaceService {\n  static async buildGuide(workspaceId: string) {\n    const workspace = await Workspace.findById(workspaceId)\n    const entrypoints = await parseAST(workspace.files)\n    return { workspaceId, entrypoints, generatedAt: new Date() }\n  }\n}`,
-    flow: ['Load files from MongoDB', 'Run AST traversal engine', 'Identify root entry points', 'Return architectural orientation']
+    flow: [
+      'Queries workspace metadata from database',
+      'Scans files for primary entrypoints and routes',
+      'Constructs step-by-step reading order',
+      'Persists guide snapshot with timestamp',
+    ],
   },
   'Workspace.ts': {
     path: 'src/models/Workspace.ts',
     name: 'Workspace.ts',
-    role: 'Persistence Model',
+    role: 'Database Schema',
     lines: 44,
     code: `import { Schema, model } from 'mongoose'\n\nconst WorkspaceSchema = new Schema({\n  name: { type: String, required: true },\n  gitUrl: { type: String },\n  status: { type: String, default: 'pending' },\n  entryPoints: [String],\n  createdAt: { type: Date, default: Date.now }\n})\n\nexport const Workspace = model('Workspace', WorkspaceSchema)`,
-    flow: ['MongoDB Collection: workspaces', 'BSON serialization', 'Indexed by workspace ID']
+    flow: [
+      'Defines database fields for saved workspaces',
+      'Enforces name and repository URL attributes',
+      'Indexes by workspace ID for instant lookup',
+    ],
+  },
+}
+
+function getWorkspaceLanguage(ws: Workspace): string {
+  if (ws.language) return ws.language
+  const url = (ws.github_repository_url || ws.repository_name || '').toLowerCase()
+  if (url.includes('express') || url.includes('fastify') || url.includes('node') || url.includes('javascript') || url.includes('js')) return 'JavaScript'
+  if (url.includes('react') || url.includes('next') || url.includes('typescript') || url.includes('ts')) return 'TypeScript'
+  if (url.includes('python') || url.includes('django') || url.includes('flask') || url.includes('fastapi')) return 'Python'
+  if (url.includes('rust') || url.includes('cargo')) return 'Rust'
+  if (url.includes('go') || url.includes('golang')) return 'Go'
+  return 'TypeScript'
+}
+
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return 'Recently'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return 'Recently'
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  } catch {
+    return 'Recently'
+  }
+}
+
+function getStatusBadge(state: string) {
+  if (state === 'guide_generated') {
+    return {
+      label: 'Analyzed',
+      dotClass: 'bg-emerald-400',
+      badgeClass: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    }
+  }
+  if (state === 'source_ready') {
+    return {
+      label: 'Indexed',
+      dotClass: 'bg-sky-400',
+      badgeClass: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
+    }
+  }
+  return {
+    label: 'Draft',
+    dotClass: 'bg-zinc-400',
+    badgeClass: 'bg-zinc-800 text-zinc-400 border border-white/10',
   }
 }
 
@@ -177,9 +236,9 @@ export function HomePage() {
       // 1. Hero entrance stagger
       if (heroRef.current) {
         gsap.from(heroRef.current.children, {
-          y: 28,
+          y: 24,
           opacity: 0,
-          duration: 0.85,
+          duration: 0.75,
           stagger: 0.1,
           ease: 'power3.out',
         })
@@ -193,15 +252,15 @@ export function HomePage() {
             start: 'top 80%',
             once: true,
           },
-          y: 28,
-          duration: 0.6,
+          y: 24,
+          duration: 0.55,
           stagger: 0.12,
           ease: 'power2.out',
           clearProps: 'all',
         })
       }
 
-      // 3. Pipeline Reel ScrollTrigger with Staggered Cards (Refresh-Safe with full opacity)
+      // 3. Pipeline Reel ScrollTrigger with Staggered Cards
       if (pipelineRef.current) {
         const headerEl = pipelineRef.current.querySelector('.pipeline-header')
         if (headerEl) {
@@ -226,7 +285,7 @@ export function HomePage() {
         if (cards.length > 0) {
           gsap.fromTo(
             cards,
-            { y: 22 },
+            { y: 20 },
             {
               y: 0,
               duration: 0.5,
@@ -251,8 +310,8 @@ export function HomePage() {
             start: 'top 85%',
             once: true,
           },
-          y: 30,
-          duration: 0.7,
+          y: 28,
+          duration: 0.65,
           ease: 'power3.out',
           clearProps: 'all',
         })
@@ -266,15 +325,15 @@ export function HomePage() {
             start: 'top 85%',
             once: true,
           },
-          y: 28,
-          duration: 0.6,
+          y: 24,
+          duration: 0.55,
           stagger: 0.1,
           ease: 'power2.out',
           clearProps: 'all',
         })
       }
 
-      // Ensure ScrollTrigger accurately measures scroll offsets upon page refresh / reload
+      // Ensure ScrollTrigger accurately measures scroll offsets upon page refresh
       requestAnimationFrame(() => {
         ScrollTrigger.refresh()
       })
@@ -295,8 +354,8 @@ export function HomePage() {
     if (viewportContentRef.current) {
       gsap.fromTo(
         viewportContentRef.current,
-        { opacity: 0.4, y: 6 },
-        { opacity: 1, y: 0, duration: 0.22, ease: 'power2.out' }
+        { opacity: 0.5, y: 4 },
+        { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }
       )
     }
   }, [activeTab, selectedFile])
@@ -338,15 +397,15 @@ export function HomePage() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 space-y-20">
         {/* Arc Hero & Command Bar */}
         <section ref={heroRef} className="text-center max-w-4xl mx-auto space-y-6 pt-4">
-          <h1 className="font-heading text-4xl sm:text-6xl md:text-[72px] font-bold tracking-tight text-white leading-[1.05]">
-            Navigate unfamiliar codebases like a native application.
+          <h1 className="font-heading text-4xl sm:text-6xl md:text-[68px] font-bold tracking-tight text-white leading-[1.08]">
+            Understand any GitHub repository in plain English.
           </h1>
 
-          <p className="text-zinc-400 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto font-sans opacity-70">
-            RepoMentor statically parses GitHub repositories and local source trees into an interactive, spatial workbench with execution traces and contributor guides.
+          <p className="text-zinc-400 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto font-sans">
+            RepoMentor turns unfamiliar codebases into structured, beginner-friendly guides—explaining how the code is organized, where execution starts, and how each component works.
           </p>
 
-          {/* Arc Command Bar (⌘T / Ctrl+T style) */}
+          {/* Command Bar */}
           <form onSubmit={handleQuickSubmit} className="pt-2 max-w-xl mx-auto">
             <div className="arc-command-bar p-1.5 flex items-center gap-2">
               <div className="pl-3 text-zinc-500">
@@ -360,7 +419,7 @@ export function HomePage() {
                 className="w-full bg-transparent border-0 text-sm text-zinc-100 font-mono focus:outline-none placeholder:text-zinc-600"
               />
               <button type="submit" className="arc-btn-primary whitespace-nowrap text-xs py-2 px-3.5 flex-shrink-0">
-                Inspect ↵
+                Explore Repository ↵
               </button>
             </div>
 
@@ -386,77 +445,77 @@ export function HomePage() {
           </form>
         </section>
 
-        {/* Problem Section: Arc "Split View" Comparison */}
-        <section ref={problemRef} className="space-y-6">
+        {/* Problem Section: Comparison View */}
+        <section ref={problemRef} id="why-repomentor" className="space-y-6 scroll-mt-28">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight opacity-70">
+            <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
               Understanding a new repository shouldn&apos;t feel like solving a puzzle.
             </h2>
 
-            <p className="text-zinc-400 text-sm sm:text-base leading-relaxed font-sans opacity-70">
+            <p className="text-zinc-400 text-sm sm:text-base leading-relaxed font-sans">
               Traditional code exploration forces developers into endless browser tabs, disconnected documentation, and blind trial-and-error.
             </p>
           </div>
 
-          {/* Arc Split View Container */}
+          {/* Comparison Container */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            {/* Left Split View: The Chaotic Status Quo */}
-            <div className="arc-split-pane gsap-split-card border-red-500/20 bg-[#0d0e12] space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            {/* Left: The Challenge */}
+            <div className="arc-split-pane gsap-split-card border-white/[0.08] bg-[#141416] space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-[1px] bg-red-400/80"></span>
-                  <span className="font-mono text-xs font-semibold text-red-400">STATUS QUO: 20 TABS CHAOS</span>
+                  <span className="w-2 h-2 rounded-full bg-zinc-500"></span>
+                  <span className="font-heading text-xs font-semibold text-zinc-300">The challenge with new codebases</span>
                 </div>
-                <span className="text-[10px] font-mono text-zinc-500">Fragmented</span>
+                <span className="text-[11px] font-mono text-zinc-500">Traditional approach</span>
               </div>
               <div className="space-y-3 text-xs text-zinc-300 font-sans">
-                <div className="p-2.5 rounded-[3px] bg-red-500/5 border border-red-500/10 space-y-1">
-                  <strong className="text-white block font-heading">The Entrypoint Maze</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Opening 20+ tabs trying to find where execution begins, which middleware loads, and how ports bind.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-white/[0.05] space-y-1">
+                  <strong className="text-zinc-200 block font-heading">Where does execution begin?</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    Opening dozens of tabs trying to guess which configuration loads first and where the true starting point is.
                   </p>
                 </div>
-                <div className="p-2.5 rounded-[3px] bg-red-500/5 border border-red-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Invisible Execution Paths</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Tracing API routes down to persistence queries means blind grepping across unverified files.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-white/[0.05] space-y-1">
+                  <strong className="text-zinc-200 block font-heading">How does data move across files?</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    Following a button click or request down to the database requires searching through nested controllers and unlinked layers.
                   </p>
                 </div>
-                <div className="p-2.5 rounded-[3px] bg-red-500/5 border border-red-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Outdated Documentation</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    README files drift within weeks of release, forcing contributors to reverse-engineer architecture from scratch.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-white/[0.05] space-y-1">
+                  <strong className="text-zinc-200 block font-heading">Missing or high-level documentation</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    READMEs explain what the software does for users, but rarely explain how internal files interact with each other.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Right Split View: RepoMentor Unified Canvas */}
-            <div className="arc-split-pane gsap-split-card border-emerald-500/20 bg-[#0d0e12] space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            {/* Right: RepoMentor Guided Approach */}
+            <div className="arc-split-pane gsap-split-card border-emerald-500/30 bg-[#141416] space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-[1px] bg-emerald-400"></span>
-                  <span className="font-mono text-xs font-semibold text-emerald-400">REPOMENTOR: UNIFIED WORKBENCH</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span className="font-heading text-xs font-semibold text-emerald-300">How RepoMentor makes it simple</span>
                 </div>
-                <span className="text-[10px] font-mono text-zinc-500">Continuous AST</span>
+                <span className="text-[11px] font-mono text-emerald-400/80">Guided mentor</span>
               </div>
               <div className="space-y-3 text-xs text-zinc-300 font-sans">
-                <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Automatic Starting Point Finder</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Instantly finds where the project starts up, its configuration settings, and main entry doors without running code.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-emerald-500/10 space-y-1">
+                  <strong className="text-emerald-200 block font-heading">Pinpoints the front door</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    Immediately highlights the main bootstrap file, configuration settings, and server listeners in plain English.
                   </p>
                 </div>
-                <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Button-to-Database Journey</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Traces an action from when someone clicks a button all the way through the app to where data is saved.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-emerald-500/10 space-y-1">
+                  <strong className="text-emerald-200 block font-heading">Traces complete user workflows</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    Shows step-by-step how user actions travel from the browser through server logic to saved records.
                   </p>
                 </div>
-                <div className="p-2.5 rounded-[3px] bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                  <strong className="text-white block font-heading">Step-by-Step Reading Order</strong>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Creates a beginner-friendly roadmap showing which files to read first, second, and third.
+                <div className="p-3 rounded-[6px] bg-[#0d0e12] border border-emerald-500/10 space-y-1">
+                  <strong className="text-emerald-200 block font-heading">Sequenced beginner reading order</strong>
+                  <p className="text-zinc-400 text-[12px] leading-relaxed">
+                    Organizes the codebase into an orderly reading sequence so you learn foundational files before complex modules.
                   </p>
                 </div>
               </div>
@@ -464,41 +523,36 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Interactive & Animated Code Breakdown Pipeline */}
+        {/* Pipeline Section: How RepoMentor Works */}
         <section ref={pipelineRef} className="space-y-4 pt-2">
           <div className="pipeline-header flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-1">
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold mb-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <Activity size={14} className="animate-pulse" />
+              <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-medium mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 <span>HOW IT WORKS</span>
                 <span className="text-zinc-600">/</span>
                 <span className="text-zinc-400">Stage {activeStage + 1} of {PIPELINE_STAGES.length}</span>
               </div>
-              <h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span>Code Breakdown Made Simple</span>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white">
+                How RepoMentor breaks down a repository
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
-                5 simple stages showing how RepoMentor understands code without executing it.
+                Five clear steps that turn raw source files into beginner-friendly explanations.
               </p>
             </div>
 
-            {/* Stage Quick Select & Navigation Controls */}
+            {/* Stage Controls */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Stage Pill Quick Jump */}
-              <div className="flex items-center gap-1 bg-[#0b0c10] p-1 rounded-[4px] border border-white/[0.08]">
+              <div className="flex items-center gap-1 bg-[#0b0c10] p-1 rounded-[6px] border border-white/[0.08]">
                 {PIPELINE_STAGES.map((stg, idx) => (
                   <button
                     key={stg.step}
                     type="button"
                     onClick={() => selectStage(idx)}
-                    className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono transition-all duration-200 cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-[4px] text-[11px] font-mono transition-all cursor-pointer ${
                       activeStage === idx
-                        ? 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                        ? 'bg-zinc-800 text-white font-medium border border-zinc-700'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
                     }`}
                     title={stg.title}
                   >
@@ -507,26 +561,24 @@ export function HomePage() {
                 ))}
               </div>
 
-              {/* Auto Tour Play/Pause Toggle */}
               <button
                 type="button"
                 onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[3px] text-xs font-mono border transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-mono border transition-all cursor-pointer ${
                   isAutoPlaying
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : 'bg-[#0f1015] text-zinc-400 border-white/10 hover:border-white/20 hover:text-zinc-200'
                 }`}
                 aria-label="Toggle auto walkthrough"
               >
                 {isAutoPlaying ? <Pause size={12} className="text-emerald-400" /> : <Play size={12} />}
-                <span className="hidden sm:inline">{isAutoPlaying ? 'Playing' : 'Auto Tour'}</span>
+                <span className="hidden sm:inline">{isAutoPlaying ? 'Pause Tour' : 'Auto Tour'}</span>
               </button>
 
-              {/* Left & Right Arrow Buttons */}
               <button
                 type="button"
                 onClick={() => scrollTrack('left')}
-                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-[4px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
                 aria-label="Previous stage"
               >
                 <ChevronLeft size={16} />
@@ -534,7 +586,7 @@ export function HomePage() {
               <button
                 type="button"
                 onClick={() => scrollTrack('right')}
-                className="w-8 h-8 rounded-[3px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-[4px] border border-white/10 bg-[#0f1015] hover:bg-[#161820] hover:border-white/20 flex items-center justify-center text-zinc-300 transition-all cursor-pointer"
                 aria-label="Next stage"
               >
                 <ChevronRight size={16} />
@@ -542,10 +594,10 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Smooth Scrollable Horizontal Reel with Animated Cards */}
+          {/* Cards Track */}
           <div
             ref={trackRef}
-            className="flex gap-4 overflow-x-auto pb-4 pt-2 scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing select-none"
+            className="flex gap-4 overflow-x-auto pb-4 pt-2 scroll-smooth snap-x snap-mandatory select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {PIPELINE_STAGES.map((item, idx) => {
@@ -556,82 +608,43 @@ export function HomePage() {
                   key={item.step}
                   ref={(el) => { cardRefs.current[idx] = el }}
                   onClick={() => selectStage(idx)}
-                  className={`pipeline-card min-w-[300px] sm:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start rounded-[8px] border p-5 space-y-4 transition-all duration-300 relative overflow-hidden group cursor-pointer ${
+                  className={`pipeline-card min-w-[300px] sm:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start rounded-[8px] border p-5 space-y-4 transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'border-emerald-500/80 bg-[#151926] -translate-y-2 shadow-[0_16px_40px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/50'
-                      : 'border-zinc-800 hover:border-zinc-600 bg-[#11131c] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.7)]'
+                      ? 'border-emerald-500/40 bg-[#141416] -translate-y-1 shadow-lg'
+                      : 'border-zinc-800 hover:border-zinc-700 bg-[#141416]'
                   }`}
                 >
-                  {/* Glowing Top Accent Beam */}
-                  <div
-                    className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${item.accentColor} transition-all duration-300 ${
-                      isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'
-                    }`}
-                  />
-
-                  {/* Header: Stage Badge + Icon + Phase */}
                   <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[2px] transition-colors ${
-                          isActive
-                            ? 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                            : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
-                        }`}
-                      >
-                        STAGE {item.step}
+                      <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-[3px] text-zinc-300 bg-zinc-800 border border-zinc-700">
+                        Stage {item.step}
                       </span>
-                      <div
-                        className={`w-6 h-6 rounded-[3px] border flex items-center justify-center transition-all duration-300 ${item.iconBg} ${
-                          isActive ? 'scale-110 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'group-hover:scale-105'
-                        }`}
-                      >
+                      <div className="w-6 h-6 rounded-[4px] bg-zinc-800 border border-white/10 flex items-center justify-center text-emerald-400">
                         <StageIcon size={13} />
                       </div>
                     </div>
-                    <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider font-semibold">
+                    <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
                       {item.phase}
                     </span>
                   </div>
 
-                  {/* Title & Plain English Explanation */}
                   <div className="space-y-1.5">
-                    <h4
-                      className={`font-heading text-sm font-semibold transition-colors duration-200 ${
-                        isActive ? 'text-emerald-200' : 'text-white group-hover:text-emerald-300'
-                      }`}
-                    >
+                    <h4 className="font-heading text-sm font-semibold text-white">
                       {item.title}
                     </h4>
-                    <p className="text-xs text-zinc-200 leading-relaxed font-sans">
+                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
                       {item.detail}
                     </p>
                   </div>
 
-                  {/* Visual Flow Transformation Pill */}
-                  <div
-                    className={`flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1.5 rounded-[3px] border transition-all duration-300 ${
-                      isActive
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200 shadow-sm'
-                        : 'bg-[#181a24] border-zinc-700/60 text-zinc-200 group-hover:text-white group-hover:border-zinc-500'
-                    }`}
-                  >
-                    <span className="text-emerald-400 font-bold transition-transform duration-300 group-hover:translate-x-0.5">
-                      ➜
-                    </span>
-                    <span>{item.flowBadge}</span>
+                  <div className="flex items-center gap-2 text-[11px] font-mono px-2.5 py-1.5 rounded-[4px] bg-[#0d0e12] border border-white/[0.06] text-zinc-300">
+                    <span className="text-emerald-400">➜</span>
+                    <span>{item.summary}</span>
                   </div>
 
-                  {/* Footer: Metric & Live Verified Badge */}
-                  <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-zinc-300 font-medium">{item.metric}</span>
-                    <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                      </span>
-                      <span>Verified</span>
-                    </div>
+                  <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-500">
+                    <span>Safe &amp; isolated</span>
+                    <span className="text-zinc-400">No runtime required</span>
                   </div>
                 </div>
               )
@@ -639,81 +652,81 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* The Hero Application: Arc Codebase Workbench Window */}
+        {/* Interactive Repository Workbench Window */}
         <section ref={workbenchRef} className="space-y-3">
           <div className="flex items-center justify-between text-xs font-mono text-zinc-400 px-1">
             <span className="flex items-center gap-2 text-zinc-300">
               <Layers size={13} className="text-emerald-400" />
-              <span>Interactive Repository Workbench</span>
+              <span>Interactive Repository Explorer</span>
             </span>
-            <span className="text-zinc-500 hidden sm:inline">Click files and tabs below to explore</span>
+            <span className="text-zinc-500 hidden sm:inline">Select files and tabs to inspect structure</span>
           </div>
 
           <div className="arc-window-frame">
-            {/* Arc Window Chrome Header */}
+            {/* Window Chrome Header */}
             <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#101217] px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 pr-3 border-r border-white/10">
-                  <span className="w-2.5 h-2.5 rounded-[1px] bg-zinc-700"></span>
-                  <span className="w-2.5 h-2.5 rounded-[1px] bg-zinc-700"></span>
-                  <span className="w-2.5 h-2.5 rounded-[1px] bg-zinc-700"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
                 </div>
                 <span className="text-xs font-mono text-zinc-300 truncate">
-                  repomentor://workspace/atlas-core/{activeNode.path}
+                  repomentor://sample/{activeNode.path}
                 </span>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-mono text-zinc-400">
                 <span className="hidden md:flex items-center gap-1 text-zinc-500">
                   <GitBranch size={12} className="text-zinc-400" />
-                  <span>main @ 8f3c12</span>
+                  <span>main branch</span>
                 </span>
-                <span className="text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[2px]">
-                  AST: INDEXED
+                <span className="text-emerald-400 text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[4px]">
+                  Analyzed
                 </span>
               </div>
             </div>
 
-            {/* Arc Application Body: Sidebar + Main Content Viewport */}
+            {/* Body */}
             <div className="grid grid-cols-1 md:grid-cols-12 min-h-[460px]">
-              {/* Arc Left Sidebar (Spaces + Files) */}
+              {/* Left Sidebar */}
               <div className="md:col-span-4 border-r border-white/[0.08] bg-[#0c0d12] p-3 flex flex-col justify-between text-xs font-mono">
                 <div className="space-y-4">
-                  {/* Arc Spaces Switcher */}
+                  {/* Key Components */}
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase text-zinc-500 tracking-wider font-semibold px-1">
-                      Arc Spaces
+                      Key Components
                     </span>
                     <button
                       type="button"
                       onClick={() => { setActiveSpace('atlas'); setSelectedFile('server.ts') }}
                       className={`arc-space-tab ${activeSpace === 'atlas' ? 'is-active' : ''}`}
                     >
-                      <span className="w-2 h-2 rounded-[1px] bg-emerald-400 flex-shrink-0"></span>
-                      <span className="truncate">Space 1: Core Engine</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                      <span className="truncate">Server Entrypoint</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setActiveSpace('routes'); setSelectedFile('api.routes.ts') }}
                       className={`arc-space-tab ${activeSpace === 'routes' ? 'is-active' : ''}`}
                     >
-                      <span className="w-2 h-2 rounded-[1px] bg-sky-400 flex-shrink-0"></span>
-                      <span className="truncate">Space 2: API Route Hub</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 flex-shrink-0"></span>
+                      <span className="truncate">API Routing</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setActiveSpace('models'); setSelectedFile('Workspace.ts') }}
                       className={`arc-space-tab ${activeSpace === 'models' ? 'is-active' : ''}`}
                     >
-                      <span className="w-2 h-2 rounded-[1px] bg-amber-400 flex-shrink-0"></span>
-                      <span className="truncate">Space 3: Database Models</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                      <span className="truncate">Database Schema</span>
                     </button>
                   </div>
 
-                  {/* Arc Filesystem Tree */}
+                  {/* Filesystem List */}
                   <div className="space-y-1 pt-2 border-t border-white/[0.06]">
                     <div className="flex items-center justify-between text-[10px] uppercase text-zinc-500 tracking-wider font-semibold px-1 pb-1">
-                      <span>Filesystem Index</span>
+                      <span>Files In Scope</span>
                       <span>4 items</span>
                     </div>
 
@@ -724,7 +737,7 @@ export function HomePage() {
                           key={key}
                           type="button"
                           onClick={() => setSelectedFile(key)}
-                          className={`w-full flex items-center justify-between p-1.5 rounded-[3px] transition-colors text-left ${
+                          className={`w-full flex items-center justify-between p-1.5 rounded-[4px] transition-colors text-left ${
                             isSelected
                               ? 'bg-zinc-800 text-white font-medium border border-zinc-700'
                               : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60'
@@ -734,7 +747,7 @@ export function HomePage() {
                             <FileCode2 size={13} className={isSelected ? 'text-emerald-400' : 'text-zinc-500'} />
                             <span className="truncate">{file.name}</span>
                           </div>
-                          <span className="text-[10px] text-zinc-500 border border-white/5 px-1 py-0.2 rounded-[2px]">
+                          <span className="text-[10px] text-zinc-500 font-mono">
                             {file.lines}L
                           </span>
                         </button>
@@ -743,51 +756,50 @@ export function HomePage() {
                   </div>
                 </div>
 
-                {/* Sidebar Bottom Status */}
+                {/* Status Bar */}
                 <div className="pt-3 border-t border-white/[0.06] text-[11px] text-zinc-500 flex items-center justify-between">
-                  <span>AST Depth: 4 Layers</span>
-                  <span className="text-zinc-400">Zero Runtime Sandbox</span>
+                  <span>Static AST Analysis</span>
+                  <span className="text-zinc-400">Zero Code Execution</span>
                 </div>
               </div>
 
-              {/* Arc Right Main Viewport (Editor & Flow Viewer) */}
+              {/* Viewport */}
               <div className="md:col-span-8 bg-[#090a0e] flex flex-col justify-between">
                 <div>
-                  {/* Viewport Top Bar */}
                   <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#111319] px-4 py-2 text-xs font-mono">
                     <div className="flex items-center gap-2">
                       <span className="text-white font-semibold">{activeNode.path}</span>
                       <span className="text-zinc-500">/</span>
-                      <span className="text-emerald-400 text-[11px]">{activeNode.role}</span>
+                      <span className="text-zinc-400 text-[11px]">{activeNode.role}</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => setActiveTab('syntax')}
-                        className={`px-2.5 py-1 rounded-[3px] text-xs transition-colors ${
+                        className={`px-2.5 py-1 rounded-[4px] text-xs transition-colors ${
                           activeTab === 'syntax'
                             ? 'bg-zinc-800 text-white border border-zinc-700 font-medium'
                             : 'text-zinc-400 hover:text-zinc-200'
                         }`}
                       >
-                        Syntax
+                        Code
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveTab('flow')}
-                        className={`px-2.5 py-1 rounded-[3px] text-xs transition-colors ${
+                        className={`px-2.5 py-1 rounded-[4px] text-xs transition-colors ${
                           activeTab === 'flow'
                             ? 'bg-zinc-800 text-white border border-zinc-700 font-medium'
                             : 'text-zinc-400 hover:text-zinc-200'
                         }`}
                       >
-                        Call Flow
+                        Execution Flow
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveTab('guide')}
-                        className={`px-2.5 py-1 rounded-[3px] text-xs transition-colors ${
+                        className={`px-2.5 py-1 rounded-[4px] text-xs transition-colors ${
                           activeTab === 'guide'
                             ? 'bg-zinc-800 text-white border border-zinc-700 font-medium'
                             : 'text-zinc-400 hover:text-zinc-200'
@@ -798,7 +810,6 @@ export function HomePage() {
                     </div>
                   </div>
 
-                  {/* Viewport Content */}
                   <div ref={viewportContentRef} className="p-4 sm:p-5 font-mono text-xs overflow-auto max-h-[380px]">
                     {activeTab === 'syntax' && (
                       <pre className="text-zinc-300 leading-relaxed whitespace-pre font-mono">
@@ -809,12 +820,12 @@ export function HomePage() {
                     {activeTab === 'flow' && (
                       <div className="space-y-4 pt-1">
                         <div className="text-[11px] text-zinc-500 uppercase tracking-wider">
-                          Step-by-Step Action Journey
+                          Step-by-Step Request Path
                         </div>
                         <div className="space-y-2">
                           {activeNode.flow.map((step, idx) => (
-                            <div key={idx} className="flex items-center gap-3 p-2.5 bg-zinc-900 border border-white/[0.06] rounded-[3px]">
-                              <span className="w-5 h-5 rounded-[2px] bg-zinc-800 text-emerald-400 border border-zinc-700 flex items-center justify-center text-xs font-bold">
+                            <div key={idx} className="flex items-center gap-3 p-2.5 bg-[#141416] border border-white/[0.08] rounded-[6px]">
+                              <span className="w-5 h-5 rounded-[4px] bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center text-xs font-semibold">
                                 {idx + 1}
                               </span>
                               <span className="text-zinc-200 font-medium">{step}</span>
@@ -827,29 +838,29 @@ export function HomePage() {
                     {activeTab === 'guide' && (
                       <div className="space-y-3 pt-1">
                         <div className="text-[11px] text-zinc-500 uppercase tracking-wider">
-                          Synthesized Contributor Reading Order
+                          Recommended Beginner Reading Sequence
                         </div>
                         <div className="space-y-2">
-                          <div className="p-2.5 bg-zinc-900 border border-white/[0.06] rounded-[3px] flex items-center justify-between">
+                          <div className="p-3 bg-[#141416] border border-white/[0.08] rounded-[6px] flex items-center justify-between">
                             <div>
-                              <strong className="text-white block font-sans">01. README.md &amp; Environment Flags</strong>
-                              <span className="text-zinc-500 text-[11px] font-sans">Understand environment prerequisites and database ports.</span>
+                              <strong className="text-white block font-sans">1. README.md &amp; Configuration</strong>
+                              <span className="text-zinc-400 text-[12px] font-sans">Learn project goals, installation commands, and environment variables.</span>
                             </div>
-                            <span className="text-[11px] font-mono text-emerald-400 font-medium">Step 1</span>
+                            <span className="text-[11px] font-mono text-zinc-400 font-medium">Step 1</span>
                           </div>
-                          <div className="p-2.5 bg-zinc-900 border border-white/[0.06] rounded-[3px] flex items-center justify-between">
+                          <div className="p-3 bg-[#141416] border border-white/[0.08] rounded-[6px] flex items-center justify-between">
                             <div>
-                              <strong className="text-white block font-sans">02. src/server.ts Entrypoint</strong>
-                              <span className="text-zinc-500 text-[11px] font-sans">Review root application bootstrap and router mount configuration.</span>
+                              <strong className="text-white block font-sans">2. src/server.ts (Entry Point)</strong>
+                              <span className="text-zinc-400 text-[12px] font-sans">See how the web server initializes and attaches routing endpoints.</span>
                             </div>
-                            <span className="text-[11px] font-mono text-emerald-400 font-medium">Step 2</span>
+                            <span className="text-[11px] font-mono text-zinc-400 font-medium">Step 2</span>
                           </div>
-                          <div className="p-2.5 bg-zinc-900 border border-white/[0.06] rounded-[3px] flex items-center justify-between">
+                          <div className="p-3 bg-[#141416] border border-white/[0.08] rounded-[6px] flex items-center justify-between">
                             <div>
-                              <strong className="text-white block font-sans">03. src/routes/ &amp; src/services/</strong>
-                              <span className="text-zinc-500 text-[11px] font-sans">Inspect business logic services and data model persistence.</span>
+                              <strong className="text-white block font-sans">3. src/routes/ &amp; src/services/</strong>
+                              <span className="text-zinc-400 text-[12px] font-sans">Explore core features, API logic, and database schemas.</span>
                             </div>
-                            <span className="text-[11px] font-mono text-emerald-400 font-medium">Step 3</span>
+                            <span className="text-[11px] font-mono text-zinc-400 font-medium">Step 3</span>
                           </div>
                         </div>
                       </div>
@@ -857,11 +868,10 @@ export function HomePage() {
                   </div>
                 </div>
 
-                {/* Viewport Footer Bar */}
                 <div className="border-t border-white/[0.08] bg-[#111319] p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono text-zinc-400">
-                  <span className="truncate">Active Heuristic: {activeNode.role} verified by AST syntax traversal.</span>
-                  <Link to="/new" className="arc-btn-primary text-xs py-1 px-3 rounded-[3px] flex-shrink-0">
-                    Analyze Full Repository <ArrowRight size={12} />
+                  <span className="truncate">Explains file roles and execution flow without executing code.</span>
+                  <Link to="/new" className="arc-btn-primary text-xs py-1.5 px-3 rounded-[4px] flex-shrink-0">
+                    Analyze a Repository <ArrowRight size={12} />
                   </Link>
                 </div>
               </div>
@@ -869,110 +879,169 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* 3 Core Architecture Spaces: Arc-Inspired Minimalist Panes */}
-        <section ref={spacesRef} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="arc-split-pane space-y-3">
+        {/* 3 Core Architecture Pillars */}
+        <section ref={spacesRef} className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="rounded-[8px] border border-white/[0.08] bg-[#141416] p-6 space-y-3 hover:border-zinc-700 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-[4px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
-                <FolderTree size={16} />
+              <div className="w-9 h-9 rounded-[6px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
+                <FolderTree size={18} />
               </div>
-              <span className="font-mono text-xs text-zinc-500 font-medium">SPACE 01</span>
+              <span className="text-[11px] font-mono text-zinc-500 font-medium">Architecture</span>
             </div>
-            <h3 className="font-heading text-base font-semibold text-white">Spatial Architectural Mapping</h3>
+            <h3 className="font-heading text-base font-semibold text-white">Folder &amp; Module Overview</h3>
             <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-              Automatically discovers root bootstrappers, middleware stacks, and boundary configurations across directories.
+              Understand how directories are organized, what each major folder is responsible for, and how the frontend and backend communicate.
             </p>
+            <div className="pt-2">
+              <span className="inline-block text-[11px] font-mono text-zinc-500">
+                Organized by true responsibility
+              </span>
+            </div>
           </div>
 
-          <div className="arc-split-pane space-y-3">
+          <div className="rounded-[8px] border border-white/[0.08] bg-[#141416] p-6 space-y-3 hover:border-zinc-700 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-[4px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
-                <Route size={16} />
+              <div className="w-9 h-9 rounded-[6px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
+                <Route size={18} />
               </div>
-              <span className="font-mono text-xs text-zinc-500 font-medium">SPACE 02</span>
+              <span className="text-[11px] font-mono text-zinc-500 font-medium">Workflows</span>
             </div>
-            <h3 className="font-heading text-base font-semibold text-white">Continuous Call Tracing</h3>
+            <h3 className="font-heading text-base font-semibold text-white">Step-by-Step Execution Traces</h3>
             <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-              Follows requests from the router dispatch layer down through service logic into database persistence models.
+              Follow real actions—such as user login, form submissions, or API queries—from the button click down through controller logic to the database.
             </p>
+            <div className="pt-2">
+              <span className="inline-block text-[11px] font-mono text-zinc-500">
+                Complete button-to-database journeys
+              </span>
+            </div>
           </div>
 
-          <div className="arc-split-pane space-y-3">
+          <div className="rounded-[8px] border border-white/[0.08] bg-[#141416] p-6 space-y-3 hover:border-zinc-700 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-[4px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
-                <BookOpen size={16} />
+              <div className="w-9 h-9 rounded-[6px] bg-zinc-900 border border-white/10 flex items-center justify-center text-emerald-400">
+                <BookOpen size={18} />
               </div>
-              <span className="font-mono text-xs text-zinc-500 font-medium">SPACE 03</span>
+              <span className="text-[11px] font-mono text-zinc-500 font-medium">Roadmap</span>
             </div>
-            <h3 className="font-heading text-base font-semibold text-white">Contributor Onboarding</h3>
+            <h3 className="font-heading text-base font-semibold text-white">Curated Reading Sequence</h3>
             <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-              Provides an actionable, sequenced reading order with prerequisite checklists so you start contributing immediately.
+              Never wonder what to read first. RepoMentor ranks the most important files in numbered order so you understand foundations before diving into details.
             </p>
+            <div className="pt-2">
+              <span className="inline-block text-[11px] font-mono text-zinc-500">
+                Sequenced learning order
+              </span>
+            </div>
           </div>
         </section>
 
-        {/* Workspaces Section */}
+        {/* Active Analysis Workspaces */}
         <section className="pt-6 border-t border-white/[0.08]">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-heading text-xl font-semibold text-white opacity-70">Active Analysis Workspaces</h2>
-              <p className="text-xs text-zinc-400 mt-0.5 opacity-70">Repositories you have inspected or saved to your account.</p>
+              <h2 className="font-heading text-xl font-semibold text-white">Active Analysis Workspaces</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Repositories you have inspected and saved to your account.</p>
             </div>
-            <Link to="/new" className="arc-btn-secondary text-xs py-1.5 px-3 rounded-[3px]">
+            <Link to="/new" className="arc-btn-secondary text-xs py-1.5 px-3 rounded-[4px]">
               + New Workspace
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="p-8 text-center text-xs font-mono text-zinc-500 rounded-[3px] border border-white/[0.06] bg-zinc-900">
+            <div className="p-8 text-center text-xs font-mono text-zinc-500 rounded-[8px] border border-white/[0.06] bg-[#141416]">
               Loading workspace index...
             </div>
           ) : visibleWorkspaces.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {visibleWorkspaces.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/workspace/${item.id}`}
-                  className="arc-split-pane block text-left group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between text-sm text-zinc-200 font-semibold mb-1 group-hover:text-emerald-400 transition-colors">
-                      <span className="truncate">{item.repository_name}</span>
-                      <ExternalLink size={13} className="text-zinc-500 group-hover:text-emerald-400 flex-shrink-0 transition-colors" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {visibleWorkspaces.map((item) => {
+                const status = getStatusBadge(item.state)
+                const language = getWorkspaceLanguage(item)
+                const timestamp = formatRelativeTime(item.updated_at || item.guide_generated_at || item.created_at)
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group rounded-[8px] border border-white/[0.08] bg-[#141416] p-5 hover:border-zinc-700 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Card Header: Repo Name + Status Badge */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderGit2 size={16} className="text-zinc-400 group-hover:text-emerald-400 transition-colors shrink-0" />
+                          <h3 className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">
+                            {item.repository_name}
+                          </h3>
+                        </div>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-mono font-medium shrink-0 ${status.badgeClass}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass}`} />
+                          <span>{status.label}</span>
+                        </span>
+                      </div>
+
+                      {/* GitHub URL */}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-mono mb-4 truncate">
+                        <Github size={12} className="shrink-0 text-zinc-600" />
+                        <span className="truncate">{item.github_repository_url || 'Local Repository Snapshot'}</span>
+                      </div>
+
+                      {/* Repository Metadata Row */}
+                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/[0.06] text-xs">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Files</span>
+                          <span className="text-zinc-300 font-medium font-mono">{item.source_file_count || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Language</span>
+                          <span className="text-zinc-300 font-medium truncate block">{language}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Last Analyzed</span>
+                          <span className="text-zinc-400 font-mono text-[11px] truncate block">{timestamp}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] font-mono text-zinc-500 truncate mb-4">
-                      {item.github_repository_url || 'Local Source Snapshot'}
+
+                    {/* Card Action Footer */}
+                    <div className="pt-4 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500 font-mono text-[11px]">Workspace ready</span>
+                      <Link
+                        to={`/workspace/${item.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors group-hover:translate-x-0.5"
+                      >
+                        <span>Open Workspace</span>
+                        <ArrowRight size={13} />
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-3 border-t border-white/[0.06]">
-                    <span className="px-2 py-0.5 rounded-[2px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
-                      {item.state.replaceAll('_', ' ')}
-                    </span>
-                    <span>{item.source_file_count} files</span>
-                  </div>
-                </Link>
-              ))}
+                )
+              })}
             </div>
           ) : (
-            <div className="p-8 rounded-[3px] border border-white/[0.06] bg-zinc-900/60 text-center space-y-3">
+            <div className="p-8 rounded-[8px] border border-white/[0.06] bg-[#141416] text-center space-y-3">
               <Code2 size={24} className="mx-auto text-zinc-600" />
               <div className="text-sm font-semibold text-zinc-200">
-                {state.authEmail ? 'No workspaces found' : 'Sign in to access your workspaces'}
+                {state.authEmail ? 'No workspaces yet' : 'Sign in to access your workspaces'}
               </div>
               <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed font-sans">
                 {state.authEmail
-                  ? 'Paste any repository URL above to generate your first architecture map.'
-                  : 'Saved workspaces and generated guides are stored securely to your account.'}
+                  ? 'Paste any repository URL above to inspect files, trace execution, and generate your first guide.'
+                  : 'Saved repositories and generated guides are stored securely in your account.'}
               </p>
-              <div className="pt-2">
+              <div className="pt-2 flex justify-center gap-3">
                 {state.authEmail ? (
-                  <Link to="/new" className="arc-btn-primary text-xs py-2 px-4 rounded-[3px]">
+                  <Link to="/new" className="arc-btn-primary text-xs py-2 px-4 rounded-[4px]">
                     Analyze a Repository
                   </Link>
                 ) : (
-                  <Link to="/login" className="arc-btn-secondary text-xs py-2 px-4 rounded-[3px]">
-                    Sign In
-                  </Link>
+                  <>
+                    <Link to="/login" className="arc-btn-secondary text-xs py-2 px-4 rounded-[4px]">
+                      Sign In
+                    </Link>
+                    <Link to="/new" className="arc-btn-primary text-xs py-2 px-4 rounded-[4px]">
+                      Analyze a Repository
+                    </Link>
+                  </>
                 )}
               </div>
             </div>

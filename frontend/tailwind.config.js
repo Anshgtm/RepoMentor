@@ -6,8 +6,8 @@ export default {
     extend: {
       colors: {
         background: '#08090a',
-        surface: '#0f1013',
-        'surface-raised': '#15171c',
+        surface: '#141416',
+        'surface-raised': '#1c1c1f',
         border: 'rgba(255, 255, 255, 0.08)',
         'border-hover': 'rgba(255, 255, 255, 0.18)',
       },
